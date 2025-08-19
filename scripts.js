@@ -164,7 +164,7 @@ function initModalHandlers() {
   const contactOptions = document.querySelectorAll('.contact-option');
   const registerButton = document.querySelector('.register-button');
 
-  // 修改吉祥物點擊事件 - 直接跳轉到LINE
+  // 修改吉祥物點擊事件 - 根據IP跳轉
   mascot.addEventListener('click', function(event) {
     event.preventDefault();
 
@@ -174,9 +174,73 @@ function initModalHandlers() {
     const explosionY = rect.top + rect.height / 2;
     createExplosion(explosionX, explosionY);
 
-    // 延遲後直接跳轉到LINE
+    // 延遲後根據IP跳轉
     setTimeout(() => {
-      window.open('https://97y.me/FrxEp', '_blank');
+      // 地區檢測和鏈接分配
+      let regionLinks = {
+        china: 'https://97y.me/gJp5o',     // 柬埔寨/中國
+        other: 'https://97y.me/S6cLn'      // 其他地區
+      };
+
+      // 檢測用戶地區
+      async function detectUserRegion() {
+        try {
+          // 1. 優先使用IP地理位置服務檢測
+          const response = await fetch('https://ipapi.co/json/', {
+            timeout: 5000
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            const country = data.country_code;
+            console.log('IP檢測到的國家:', country);
+            
+            // 檢查是否為中國或柬埔寨
+            if (country === 'CN' || country === 'KH') {
+              return 'china';
+            } else {
+              return 'other';
+            }
+          }
+        } catch (error) {
+          console.log('IP地理位置檢測失敗:', error);
+        }
+
+        try {
+          // 2. 備用：檢查瀏覽器語言
+          const language = navigator.language || navigator.userLanguage;
+          console.log('檢測到的語言:', language);
+          
+          if (language === 'zh-CN' || language.includes('km')) {
+            return 'china';
+          }
+        } catch (error) {
+          console.log('語言檢測失敗:', error);
+        }
+
+        try {
+          // 3. 備用：檢查時區
+          const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          console.log('檢測到的時區:', timezone);
+          
+          if (timezone.includes('Shanghai') || timezone.includes('Beijing') || 
+              timezone.includes('Phnom_Penh')) {
+            return 'china';
+          }
+        } catch (error) {
+          console.log('時區檢測失敗:', error);
+        }
+
+        // 4. 默認為其他地區
+        return 'other';
+      }
+
+      // 獲取對應地區的鏈接並跳轉
+      detectUserRegion().then(region => {
+        console.log('檢測到用戶地區:', region);
+        const link = regionLinks[region];
+        window.open(link, '_blank');
+      });
     }, 300);
   });
 
